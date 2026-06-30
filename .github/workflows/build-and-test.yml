@@ -1,0 +1,27 @@
+name: .NET Core CI
+
+on:
+  push:
+    branches: [ "develop", "main" ]
+  pull_request:
+    branches: [ "develop", "main" ]
+
+jobs:
+  build:
+    name: Build & Verify Solution
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore NuGet Packages
+      run: dotnet restore PRN232.Plagiarism.sln
+
+    - name: Compile Solution (Release Mode)
+      run: dotnet build PRN232.Plagiarism.sln --no-restore -c Release
