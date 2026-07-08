@@ -17,26 +17,34 @@ public class RoslynPlagiarismScanner : IPlagiarismScanner
     {
         var violations = new List<PlagiarismViolation>();
 
+        System.Console.WriteLine($"[Plagiarism Scanner] Starting scan for path: {workspacePath}");
         if (string.IsNullOrWhiteSpace(workspacePath) || !Directory.Exists(workspacePath))
         {
+            System.Console.WriteLine($"[Plagiarism Scanner] Error: Path does not exist or is empty.");
             return violations;
         }
 
         if (bannedKeywords == null || bannedKeywords.Count == 0)
         {
+            System.Console.WriteLine($"[Plagiarism Scanner] Error: Banned keywords list is empty.");
             return violations;
         }
 
+        System.Console.WriteLine($"[Plagiarism Scanner] Banned keywords: {string.Join(", ", bannedKeywords)}");
+
         // Quét tất cả các file .cs trong thư mục workspace
         var csFiles = Directory.GetFiles(workspacePath, "*.cs", SearchOption.AllDirectories);
+        System.Console.WriteLine($"[Plagiarism Scanner] Found {csFiles.Length} .cs files total.");
 
         foreach (var file in csFiles)
         {
             if (IsGeneratedOrBuildArtifact(workspacePath, file))
             {
+                System.Console.WriteLine($"[Plagiarism Scanner] Skipped generated/artifact file: {Path.GetFileName(file)}");
                 continue;
             }
 
+            System.Console.WriteLine($"[Plagiarism Scanner] Scanning file: {file}");
             try
             {
                 var code = await File.ReadAllTextAsync(file);
@@ -47,14 +55,19 @@ public class RoslynPlagiarismScanner : IPlagiarismScanner
                 var walker = new BannedKeywordWalker(fileName, code, bannedKeywords);
                 walker.Visit(root);
 
+                if (walker.Violations.Count > 0)
+                {
+                    System.Console.WriteLine($"[Plagiarism Scanner] Found {walker.Violations.Count} violations in {fileName}");
+                }
                 violations.AddRange(walker.Violations);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Bỏ qua lỗi đọc file hoặc lỗi phân tích cú pháp để tiếp tục quét các file khác
+                System.Console.WriteLine($"[Plagiarism Scanner] Exception scanning file {file}: {ex.Message}");
             }
         }
 
+        System.Console.WriteLine($"[Plagiarism Scanner] Scan completed. Total violations found: {violations.Count}");
         return violations;
     }
 

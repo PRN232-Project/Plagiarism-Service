@@ -16,6 +16,13 @@ public class PlagiarismRepository : IPlagiarismRepository
 
     public async Task SaveAsync(PlagiarismRecord record)
     {
+        var existing = await _context.PlagiarismRecords
+            .FirstOrDefaultAsync(r => r.SubmissionId == record.SubmissionId);
+        if (existing != null)
+        {
+            _context.PlagiarismRecords.Remove(existing);
+        }
+        
         _context.PlagiarismRecords.Add(record);
         await _context.SaveChangesAsync();
     }

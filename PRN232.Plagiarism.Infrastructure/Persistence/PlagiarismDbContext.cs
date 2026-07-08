@@ -15,6 +15,7 @@ public class PlagiarismDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.HasDefaultSchema("plag");
 
         // Cấu hình bảng PlagiarismRecord
         modelBuilder.Entity<PlagiarismRecord>(entity =>

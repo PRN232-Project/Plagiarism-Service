@@ -12,15 +12,6 @@ public static class DependencyInjection
     {
         // DB Connection
         var connectionString = configuration.GetConnectionString("DefaultConnection");
-        var dbHost = System.Environment.GetEnvironmentVariable("DB_HOST");
-        if (!string.IsNullOrEmpty(dbHost))
-        {
-            var connBuilder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString)
-            {
-                Host = dbHost
-            };
-            connectionString = connBuilder.ConnectionString;
-        }
 
         services.AddDbContext<Persistence.PlagiarismDbContext>(options =>
             options.UseNpgsql(connectionString));
