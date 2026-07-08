@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\PRN232.Plagiarism.Domain\PRN232.Plagiarism.Domain.csproj" />
@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="MediatR" Version="12.4.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
   </ItemGroup>
 
   <PropertyGroup>
