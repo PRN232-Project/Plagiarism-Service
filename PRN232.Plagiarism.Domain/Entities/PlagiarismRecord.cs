@@ -15,7 +15,10 @@ public class PlagiarismRecord
     // Navigation property for EF Core
     public List<PlagiarismViolationRecord> Violations { get; set; } = new();
 
-    public static PlagiarismRecord Create(Guid submissionId, Guid examId, string studentId, List<PlagiarismViolationRecord> violations)
+    public List<string> ProjectGuids { get; set; } = new();
+    public string WorkspacePath { get; set; } = string.Empty;
+
+    public static PlagiarismRecord Create(Guid submissionId, Guid examId, string studentId, List<PlagiarismViolationRecord> violations, List<string> projectGuids, string workspacePath)
     {
         return new PlagiarismRecord
         {
@@ -25,7 +28,9 @@ public class PlagiarismRecord
             StudentId = studentId,
             HasViolations = violations.Count > 0,
             ScannedAt = DateTime.UtcNow,
-            Violations = violations
+            Violations = violations,
+            ProjectGuids = projectGuids,
+            WorkspacePath = workspacePath
         };
     }
 }

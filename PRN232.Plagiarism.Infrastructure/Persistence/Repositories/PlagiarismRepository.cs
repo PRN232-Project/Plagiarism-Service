@@ -41,4 +41,27 @@ public class PlagiarismRepository : IPlagiarismRepository
             .Where(r => r.ExamId == examId)
             .ToListAsync();
     }
+
+    public async Task SaveComparisonAsync(PlagiarismComparison comparison)
+    {
+        _context.PlagiarismComparisons.Add(comparison);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteComparisonsBySubmissionAsync(System.Guid submissionId)
+    {
+        var comparisons = await _context.PlagiarismComparisons
+            .Where(c => c.SubmissionIdA == submissionId || c.SubmissionIdB == submissionId)
+            .ToListAsync();
+        _context.PlagiarismComparisons.RemoveRange(comparisons);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task<System.Collections.Generic.List<PlagiarismComparison>> GetComparisonsByExamIdAsync(System.Guid examId)
+    {
+        return await _context.PlagiarismComparisons
+            .Where(c => c.ExamId == examId)
+            .OrderByDescending(c => c.SimilarityScore)
+            .ToListAsync();
+    }
 }

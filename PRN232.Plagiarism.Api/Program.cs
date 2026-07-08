@@ -19,7 +19,37 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<PRN232.Plagiarism.Infrastructure.Persistence.PlagiarismDbContext>();
-    dbContext.Database.ExecuteSqlRaw("CREATE SCHEMA IF NOT EXISTS plag;");
+    
+    try
+    {
+        dbContext.Database.ExecuteSqlRaw("CREATE SCHEMA IF NOT EXISTS plag;");
+        
+        // Cập nhật cấu trúc database: Thêm cột và bảng mới cho Plagiarism Pipeline nếu chưa có
+        dbContext.Database.ExecuteSqlRaw(@"
+            ALTER TABLE plag.""PlagiarismRecords"" ADD COLUMN IF NOT EXISTS ""ProjectGuids"" text[] NULL;
+            ALTER TABLE plag.""PlagiarismRecords"" ADD COLUMN IF NOT EXISTS ""WorkspacePath"" character varying(500) NULL;
+
+            UPDATE plag.""PlagiarismRecords"" SET ""ProjectGuids"" = ARRAY[]::text[] WHERE ""ProjectGuids"" IS NULL;
+            UPDATE plag.""PlagiarismRecords"" SET ""WorkspacePath"" = '' WHERE ""WorkspacePath"" IS NULL;
+
+            CREATE TABLE IF NOT EXISTS plag.""PlagiarismComparisons"" (
+                ""Id"" uuid NOT NULL,
+                ""ExamId"" uuid NOT NULL,
+                ""SubmissionIdA"" uuid NOT NULL,
+                ""SubmissionIdB"" uuid NOT NULL,
+                ""StudentIdA"" character varying(50) NOT NULL,
+                ""StudentIdB"" character varying(50) NOT NULL,
+                ""SimilarityScore"" numeric(5,2) NOT NULL,
+                ""GuidMatched"" boolean NOT NULL,
+                ""ScannedAt"" timestamp with time zone NOT NULL,
+                CONSTRAINT ""PK_PlagiarismComparisons"" PRIMARY KEY (""Id"")
+            );
+        ");
+    }
+    catch (System.Exception ex)
+    {
+        System.Console.WriteLine($"[DB Setup Warning - Safe to ignore if tables do not exist yet] {ex.Message}");
+    }
     
     var databaseCreator = dbContext.Database.GetService<Microsoft.EntityFrameworkCore.Storage.IDatabaseCreator>() 
         as Microsoft.EntityFrameworkCore.Storage.RelationalDatabaseCreator;

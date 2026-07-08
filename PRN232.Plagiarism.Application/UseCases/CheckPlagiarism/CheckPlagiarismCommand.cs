@@ -36,6 +36,7 @@ public class CheckPlagiarismCommandHandler : IRequestHandler<CheckPlagiarismComm
 
     public async Task Handle(CheckPlagiarismCommand request, CancellationToken cancellationToken)
     {
+        // 1. Quét từ khóa cấm
         var violations = await _scanner.ScanAsync(request.WorkspacePath, request.BannedKeywords);
 
         // Map DTOs to Domain Entities
@@ -48,17 +49,63 @@ public class CheckPlagiarismCommandHandler : IRequestHandler<CheckPlagiarismComm
             CodeSnippet = v.CodeSnippet
         }).ToList();
 
+        // 2. Quét Project GUIDs
+        var guidScanner = new Services.VsProjectGuidScanner();
+        var projectGuids = guidScanner.ScanProjectGuids(request.WorkspacePath);
+
+        // 3. Tạo và lưu PlagiarismRecord cho sinh viên hiện tại
         var record = PlagiarismRecord.Create(
             request.SubmissionId,
             request.ExamId,
             request.StudentId,
-            violationRecords
+            violationRecords,
+            projectGuids,
+            request.WorkspacePath
         );
 
         // Lưu vào database riêng của plagiarism thông qua repository
         await _repository.SaveAsync(record);
 
-        // Gửi thông báo gian lận nếu có vi phạm
+        // 4. Xóa các báo cáo so sánh chéo cũ liên quan đến bài nộp này
+        await _repository.DeleteComparisonsBySubmissionAsync(request.SubmissionId);
+
+        // 5. Thực hiện so sánh chéo với các sinh viên khác của cùng một Kỳ thi (ExamId)
+        var otherRecords = await _repository.GetByExamIdAsync(request.ExamId);
+        
+        var winnowingChecker = new Services.WinnowingSimilarityChecker();
+        var currentFingerprints = winnowingChecker.GetFingerprints(request.WorkspacePath);
+
+        foreach (var other in otherRecords)
+        {
+            if (other.SubmissionId == request.SubmissionId)
+            {
+                continue;
+            }
+
+            // A. Kiểm tra trùng GUID chéo
+            bool guidMatched = record.ProjectGuids.Intersect(other.ProjectGuids).Any();
+
+            // B. Đo độ tương đồng thuật toán Winnowing
+            var otherFingerprints = winnowingChecker.GetFingerprints(other.WorkspacePath);
+            var similarity = winnowingChecker.CalculateSimilarity(currentFingerprints, otherFingerprints);
+
+            // C. Lưu báo cáo so sánh chéo nếu có nghi vấn (Trùng GUID hoặc độ tương đồng >= 50%)
+            if (guidMatched || similarity >= 0.50m)
+            {
+                var comparison = PlagiarismComparison.Create(
+                    request.ExamId,
+                    request.SubmissionId,
+                    other.SubmissionId,
+                    request.StudentId,
+                    other.StudentId,
+                    similarity * 100, // Đổi sang phần trăm (ví dụ: 85.50%)
+                    guidMatched
+                );
+                await _repository.SaveComparisonAsync(comparison);
+            }
+        }
+
+        // 6. Gửi thông báo gian lận từ khóa cấm nếu có vi phạm
         if (violations.Count > 0)
         {
             var alertEvent = new PlagiarismAlertEvent(

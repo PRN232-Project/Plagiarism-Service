@@ -11,6 +11,7 @@ public class PlagiarismDbContext : DbContext
 
     public DbSet<PlagiarismRecord> PlagiarismRecords => Set<PlagiarismRecord>();
     public DbSet<PlagiarismViolationRecord> PlagiarismViolationRecords => Set<PlagiarismViolationRecord>();
+    public DbSet<PlagiarismComparison> PlagiarismComparisons => Set<PlagiarismComparison>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,6 +24,8 @@ public class PlagiarismDbContext : DbContext
             entity.ToTable("PlagiarismRecords");
             entity.HasKey(e => e.Id);
             entity.Property(e => e.StudentId).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.ProjectGuids).HasColumnType("text[]");
+            entity.Property(e => e.WorkspacePath).HasMaxLength(500);
             
             // Mối quan hệ 1-N với PlagiarismViolationRecord
             entity.HasMany(e => e.Violations)
@@ -39,6 +42,16 @@ public class PlagiarismDbContext : DbContext
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(255);
             entity.Property(e => e.BannedKeyword).IsRequired().HasMaxLength(100);
             entity.Property(e => e.CodeSnippet).IsRequired();
+        });
+
+        // Cấu hình bảng PlagiarismComparison
+        modelBuilder.Entity<PlagiarismComparison>(entity =>
+        {
+            entity.ToTable("PlagiarismComparisons");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.StudentIdA).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.StudentIdB).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.SimilarityScore).HasPrecision(5, 2);
         });
     }
 }

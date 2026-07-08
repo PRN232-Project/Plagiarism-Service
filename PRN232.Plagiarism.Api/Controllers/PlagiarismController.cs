@@ -2,8 +2,11 @@ using System;
 using System.Threading.Tasks;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using PRN232.Plagiarism.Application.Interfaces;
 using PRN232.Plagiarism.Application.UseCases.CheckPlagiarism;
 using PRN232.Plagiarism.Application.UseCases.GetPlagiarismReport;
+using PRN232.Plagiarism.Application.UseCases.GetPlagiarismComparisons;
+using PRN232.Plagiarism.Api.Requests;
 
 namespace PRN232.Plagiarism.Api.Controllers;
 
@@ -29,6 +32,13 @@ public class PlagiarismController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("exams/{examId}/comparisons")]
+    public async Task<ActionResult<System.Collections.Generic.List<PRN232.Plagiarism.Domain.Entities.PlagiarismComparison>>> GetComparisonsByExamId(Guid examId)
+    {
+        var result = await _mediator.Send(new GetPlagiarismComparisonsQuery(examId));
+        return Ok(result);
+    }
+
     [HttpPost("check")]
     public async Task<IActionResult> RunCheck([FromBody] RunCheckRequest request)
     {
@@ -43,13 +53,4 @@ public class PlagiarismController : ControllerBase
         await _mediator.Send(command);
         return Ok(new { Message = "Đã kích hoạt quét mã nguồn gian lận thành công." });
     }
-}
-
-public class RunCheckRequest
-{
-    public Guid? SubmissionId { get; set; }
-    public Guid ExamId { get; set; }
-    public string StudentId { get; set; } = string.Empty;
-    public string WorkspacePath { get; set; } = string.Empty;
-    public System.Collections.Generic.List<string> BannedKeywords { get; set; } = new();
 }
