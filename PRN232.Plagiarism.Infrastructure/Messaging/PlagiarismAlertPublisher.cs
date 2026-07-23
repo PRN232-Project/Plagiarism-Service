@@ -11,18 +11,23 @@ namespace PRN232.Plagiarism.Infrastructure.Messaging;
 
 public class PlagiarismAlertPublisher : IPlagiarismAlertPublisher
 {
-    private readonly string _hostName;
+    private readonly IConfiguration _configuration;
 
     public PlagiarismAlertPublisher(IConfiguration configuration)
     {
-        _hostName = configuration["RabbitMQ:HostName"] 
-                    ?? Environment.GetEnvironmentVariable("RABBITMQ_HOST") 
-                    ?? "localhost";
+        _configuration = configuration;
     }
 
     public async Task PublishAlertAsync(PlagiarismAlertEvent alertEvent)
     {
-        var factory = new ConnectionFactory { HostName = _hostName };
+        if (!_configuration.GetValue("RabbitMQ:Enabled", true)) return;
+        var factory = new ConnectionFactory
+        {
+            HostName = _configuration["RabbitMQ:HostName"] ?? Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost",
+            Port = _configuration.GetValue("RabbitMQ:Port", 5672),
+            UserName = _configuration["RabbitMQ:UserName"] ?? "guest",
+            Password = _configuration["RabbitMQ:Password"] ?? "guest"
+        };
         using var connection = await factory.CreateConnectionAsync();
         using var channel = await connection.CreateChannelAsync();
 
