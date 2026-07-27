@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="..\..\Common\Protos\auth.proto" GrpcServices="Client" Link="Protos\auth.proto" />
+    <Protobuf Include="Protos\auth.proto" GrpcServices="Client" Link="Protos\auth.proto" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -36,5 +36,6 @@
   </PropertyGroup>
 
 </Project>
+
 
 

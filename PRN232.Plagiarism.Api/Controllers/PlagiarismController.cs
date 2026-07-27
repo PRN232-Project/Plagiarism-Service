@@ -13,7 +13,7 @@ namespace PRN232.Plagiarism.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[GrpcAuthorize(Roles = "ExamOfficer")]
+[Microsoft.AspNetCore.Authorization.AllowAnonymous]
 public class PlagiarismController : ControllerBase
 {
     private readonly IMediator _mediator;
