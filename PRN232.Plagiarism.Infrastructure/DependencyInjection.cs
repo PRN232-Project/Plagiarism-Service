@@ -21,6 +21,14 @@ public static class DependencyInjection
         services.AddScoped<PRN232.Plagiarism.Application.Interfaces.IPlagiarismAlertPublisher, PRN232.Plagiarism.Infrastructure.Messaging.PlagiarismAlertPublisher>();
         services.AddHostedService<PRN232.Plagiarism.Infrastructure.Messaging.IntegrationEventConsumer>();
 
+        // gRPC Client & Security Services
+        services.AddGrpcClient<PRN232.Common.Grpc.AuthGrpcService.AuthGrpcServiceClient>(options =>
+        {
+            var url = configuration["GrpcSettings:ExamAccountUrl"] ?? "http://localhost:5178";
+            options.Address = new Uri(url);
+        });
+        services.AddScoped<PRN232.Plagiarism.Application.Interfaces.IAuthService, Security.GrpcAuthService>();
+
         return services;
     }
 }

@@ -7,11 +7,13 @@ using PRN232.Plagiarism.Application.UseCases.CheckPlagiarism;
 using PRN232.Plagiarism.Application.UseCases.GetPlagiarismReport;
 using PRN232.Plagiarism.Application.UseCases.GetPlagiarismComparisons;
 using PRN232.Plagiarism.Api.Requests;
+using PRN232.Plagiarism.Api.Security;
 
 namespace PRN232.Plagiarism.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[GrpcAuthorize(Roles = "ExamOfficer")]
 public class PlagiarismController : ControllerBase
 {
     private readonly IMediator _mediator;
